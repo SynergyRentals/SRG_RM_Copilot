@@ -53,9 +53,9 @@ Preferred communication style: Simple, everyday language.
 - **Rate Limiting**: Built-in rate limiting for external API compliance
 - **Data Sources**:
   - Wheelhouse Demand API (≤20 requests/minute)
-  - Guesty Open API (60-second intervals)
   - AirDNA free market data
   - Rabbu market insights
+  - Guesty integration: DISABLED
 
 ### Performance Monitoring & Alerts
 - **Analysis**: Z-score analysis (1.5σ below benchmark triggers alerts)
@@ -71,7 +71,7 @@ Preferred communication style: Simple, everyday language.
 
 ## Data Flow
 
-1. **Data Collection**: Cron jobs fetch data from external APIs (Wheelhouse, Guesty, AirDNA, Rabbu)
+1. **Data Collection**: Cron jobs fetch data from external APIs (Wheelhouse, AirDNA, Rabbu)
 2. **Storage**: Raw data is processed and stored in PostgreSQL tables
 3. **Analysis**: AI recommendations are generated using OpenAI API with historical performance data
 4. **Dashboard**: React frontend queries the Express API for dashboard data
@@ -83,7 +83,7 @@ Preferred communication style: Simple, everyday language.
 ### Third-Party APIs
 - **OpenAI API**: AI recommendation generation
 - **Wheelhouse Demand API**: Property performance data
-- **Guesty Open API**: Property management integration
+- **Guesty Open API**: DISABLED (was: Property management integration)
 - **AirDNA**: Market data and competitive analysis
 - **Rabbu**: Additional market insights
 

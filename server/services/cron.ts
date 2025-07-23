@@ -1,7 +1,6 @@
 import cron from 'node-cron';
 import { 
   fetchWheelhouseData, 
-  fetchGuestyData, 
   fetchAirDNAData, 
   fetchRabbuData 
 } from './apis';
@@ -9,7 +8,7 @@ import { storage } from '../storage';
 import { checkPerformanceAlerts } from './alerts';
 
 // Cron schedule: 3am, 11am, 7pm daily (0 3,11,19 * * *)
-// Queues Wheelhouse fetches at ≤20 req/min and enforces a 60-second gap for Guesty calls
+// Queues Wheelhouse fetches at ≤20 req/min
 const CRON_SCHEDULE = '0 3,11,19 * * *';
 
 export function initializeCronJobs() {
@@ -31,9 +30,8 @@ export function initializeCronJobs() {
         await Promise.all(batch.map(async (listing) => {
           try {
             // Fetch data from all sources with rate limiting
-            const [wheelhouseData, guestyData, airDNAData, rabbuData] = await Promise.allSettled([
+            const [wheelhouseData, airDNAData, rabbuData] = await Promise.allSettled([
               fetchWheelhouseData(listing),
-              fetchGuestyData(listing),
               fetchAirDNAData(listing.location),
               fetchRabbuData(listing.location)
             ]);
@@ -52,19 +50,7 @@ export function initializeCronJobs() {
               });
             }
 
-            // Process Guesty data (if successful)
-            if (guestyData.status === 'fulfilled' && guestyData.value) {
-              await storage.createNightlyStats({
-                listingId: listing.id,
-                date: new Date(),
-                adr: guestyData.value.adr?.toString(),
-                occupancy: guestyData.value.occupancy?.toString(),
-                revpar: guestyData.value.revpar?.toString(),
-                bookings: guestyData.value.bookings || 0,
-                revenue: guestyData.value.revenue?.toString(),
-                source: 'guesty'
-              });
-            }
+
 
             // Process market data (AirDNA)
             if (airDNAData.status === 'fulfilled' && airDNAData.value) {

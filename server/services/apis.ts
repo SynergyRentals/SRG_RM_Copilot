@@ -76,44 +76,10 @@ export async function fetchWheelhouseData(propertyIds: string[]): Promise<Wheelh
   return results;
 }
 
-// Guesty Open API integration (60-second intervals)
+// Guesty integration disabled
 export async function fetchGuestyData(listingIds: string[]): Promise<GuestyData[]> {
-  console.log('🏠 Fetching Guesty data for listings:', listingIds.length);
-  
-  const results: GuestyData[] = [];
-  
-  for (const listingId of listingIds) {
-    try {
-      // Simulated API call - in production, this would be:
-      // const response = await fetch(`https://api.guesty.com/api/v2/reservations?listingId=${listingId}`, {
-      //   headers: { 'Authorization': `Bearer ${process.env.GUESTY_API_KEY}` }
-      // });
-      
-      console.log(`  → Fetching bookings for listing ${listingId}`);
-      
-      // For demo: generate realistic booking data
-      const mockData: GuestyData = {
-        listingId,
-        bookings: Math.floor(Math.random() * 5) + 1,
-        revenue: 500 + Math.random() * 1000,
-        checkins: Math.floor(Math.random() * 3),
-        date: new Date().toISOString().split('T')[0]
-      };
-      
-      results.push(mockData);
-      
-      // Rate limiting: 60-second gap
-      if (listingIds.indexOf(listingId) < listingIds.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 60000));
-      }
-      
-    } catch (error) {
-      console.error(`Failed to fetch Guesty data for ${listingId}:`, error);
-    }
-  }
-  
-  console.log(`✅ Guesty fetch completed: ${results.length} listings`);
-  return results;
+  console.info('Guesty pull skipped');
+  return [];
 }
 
 // AirDNA free market data
