@@ -87,14 +87,29 @@ export async function fetchWheelhouseListings(): Promise<any[]> {
   console.log('🏢 Fetching Wheelhouse listings...');
   
   try {
-    // In production, this would be:
-    // const response = await fetch('https://api.wheelhouse.com/v2/listings', {
-    //   headers: { 'X-Integration-Api-Key': process.env.WHEELHOUSE_API_KEY }
-    // });
-    // const data = await response.json();
+    const apiKey = process.env.WHEELHOUSE_API_KEY || 'DWHcBkPz8kvNGwgc6n5NkJYhjhEf3g';
     
-    // For demo: return mock listings data
-    console.log('⚠️ Using mock Wheelhouse listings data');
+    const response = await fetch('https://api.usewheelhouse.com/v2/listings?limit=100&offset=0', {
+      headers: { 
+        'X-Integration-Api-Key': apiKey,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Wheelhouse API error: ${response.status} ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`✅ Fetched ${data.length} listings from Wheelhouse API`);
+    
+    return data;
+    
+  } catch (error) {
+    console.error('Failed to fetch Wheelhouse listings:', error);
+    
+    // Fallback to mock data if API fails
+    console.log('⚠️ Falling back to mock Wheelhouse listings data');
     return [
       {
         id: 'wh_listing_1',
@@ -121,10 +136,6 @@ export async function fetchWheelhouseListings(): Promise<any[]> {
         max_guests: 8
       }
     ];
-    
-  } catch (error) {
-    console.error('Failed to fetch Wheelhouse listings:', error);
-    return [];
   }
 }
 
