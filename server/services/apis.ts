@@ -97,21 +97,24 @@ export async function fetchWheelhouseListings(): Promise<any[]> {
       while (true) {
         const headers: Record<string, string> = {
           'X-Integration-Api-Key': apiKey,
+          'X-User-API-Key': userKey || '',
           'Content-Type': 'application/json'
         };
-        
-        if (userKey) {
-          headers['X-User-API-Key'] = userKey;
-        }
         
         const response = await fetch(`https://api.usewheelhouse.com/v2/listings?limit=${limit}&offset=${offset}`, {
           headers
         });
         
-        if (response.status === 401 && retryAttempt === 0) {
-          console.log('🔑 Received 401 Unauthorized - this may indicate expired credentials or insufficient permissions');
-          console.log('   → Retrying request once in case of temporary auth issue...');
-          return await makeRequest(1);
+        if (response.status === 401) {
+          if (!userKey) {
+            console.error('❌ 401 Unauthorized: Missing WHEELHOUSE_USER_KEY environment variable. Please set this secret in your Repl.');
+          } else {
+            console.error('❌ 401 Unauthorized: Invalid credentials or insufficient permissions. Check your Wheelhouse API keys.');
+          }
+          if (retryAttempt === 0) {
+            console.log('   → Retrying request once in case of temporary auth issue...');
+            return await makeRequest(1);
+          }
         }
         
         if (!response.ok) {
