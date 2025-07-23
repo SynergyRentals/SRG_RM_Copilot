@@ -88,22 +88,37 @@ export async function fetchWheelhouseListings(): Promise<any[]> {
   
   try {
     const apiKey = process.env.WHEELHOUSE_API_KEY || 'DWHcBkPz8kvNGwgc6n5NkJYhjhEf3g';
+    const allListings: any[] = [];
+    let offset = 0;
+    const limit = 100;
     
-    const response = await fetch('https://api.usewheelhouse.com/v2/listings?limit=100&offset=0', {
-      headers: { 
-        'X-Integration-Api-Key': apiKey,
-        'Content-Type': 'application/json'
+    while (true) {
+      const response = await fetch(`https://api.usewheelhouse.com/v2/listings?limit=${limit}&offset=${offset}`, {
+        headers: { 
+          'X-Integration-Api-Key': apiKey,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Wheelhouse API error: ${response.status} ${response.statusText}`);
       }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Wheelhouse API error: ${response.status} ${response.statusText}`);
+      
+      const data = await response.json();
+      
+      // If no more listings, break the loop
+      if (!data || data.length === 0) {
+        break;
+      }
+      
+      allListings.push(...data);
+      offset += limit;
+      
+      console.log(`[SYNC] Fetched ${allListings.length} listings`);
     }
     
-    const data = await response.json();
-    console.log(`✅ Fetched ${data.length} listings from Wheelhouse API`);
-    
-    return data;
+    console.log(`✅ Fetched total of ${allListings.length} listings from Wheelhouse API`);
+    return allListings;
     
   } catch (error) {
     console.error('Failed to fetch Wheelhouse listings:', error);
