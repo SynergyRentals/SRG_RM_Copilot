@@ -86,72 +86,93 @@ export async function fetchGuestyData(listingIds: string[]): Promise<GuestyData[
 export async function fetchWheelhouseListings(): Promise<any[]> {
   console.log('🏢 Fetching Wheelhouse listings...');
   
-  try {
-    const apiKey = process.env.WHEELHOUSE_API_KEY || 'DWHcBkPz8kvNGwgc6n5NkJYhjhEf3g';
-    const allListings: any[] = [];
-    let offset = 0;
-    const limit = 100;
-    
-    while (true) {
-      const response = await fetch(`https://api.usewheelhouse.com/v2/listings?limit=${limit}&offset=${offset}`, {
-        headers: { 
+  const makeRequest = async (retryAttempt = 0): Promise<any[]> => {
+    try {
+      const apiKey = process.env.WHEELHOUSE_API_KEY || 'DWHcBkPz8kvNGwgc6n5NkJYhjhEf3g';
+      const userKey = process.env.WHEELHOUSE_USER_KEY;
+      const allListings: any[] = [];
+      let offset = 0;
+      const limit = 100;
+      
+      while (true) {
+        const headers: Record<string, string> = {
           'X-Integration-Api-Key': apiKey,
           'Content-Type': 'application/json'
+        };
+        
+        if (userKey) {
+          headers['X-User-API-Key'] = userKey;
         }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Wheelhouse API error: ${response.status} ${response.statusText}`);
+        
+        const response = await fetch(`https://api.usewheelhouse.com/v2/listings?limit=${limit}&offset=${offset}`, {
+          headers
+        });
+        
+        if (response.status === 401 && retryAttempt === 0) {
+          console.log('🔑 Received 401 Unauthorized - this may indicate expired credentials or insufficient permissions');
+          console.log('   → Retrying request once in case of temporary auth issue...');
+          return await makeRequest(1);
+        }
+        
+        if (!response.ok) {
+          throw new Error(`Wheelhouse API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        // If no more listings, break the loop
+        if (!data || data.length === 0) {
+          break;
+        }
+        
+        allListings.push(...data);
+        offset += limit;
+        
+        console.log(`[SYNC] Fetched ${allListings.length} listings`);
       }
       
-      const data = await response.json();
+      console.log(`✅ Fetched total of ${allListings.length} listings from Wheelhouse API`);
+      return allListings;
       
-      // If no more listings, break the loop
-      if (!data || data.length === 0) {
-        break;
+    } catch (error) {
+      if (retryAttempt === 0) {
+        console.error('Failed to fetch Wheelhouse listings:', error);
+        
+        // Fallback to mock data if API fails
+        console.log('⚠️ Falling back to mock Wheelhouse listings data');
+        return [
+          {
+            id: 'wh_listing_1',
+            name: 'Downtown Luxury Loft',
+            city: 'San Francisco',
+            bedroom_count: 2,
+            bathroom_count: 2,
+            max_guests: 4
+          },
+          {
+            id: 'wh_listing_2', 
+            name: 'Beach House Paradise',
+            city: 'Santa Monica',
+            bedroom_count: 3,
+            bathroom_count: 2,
+            max_guests: 6
+          },
+          {
+            id: 'wh_listing_3',
+            name: 'Mountain Cabin Retreat',
+            city: 'Lake Tahoe',
+            bedroom_count: 4,
+            bathroom_count: 3,
+            max_guests: 8
+          }
+        ];
+      } else {
+        throw error;
       }
-      
-      allListings.push(...data);
-      offset += limit;
-      
-      console.log(`[SYNC] Fetched ${allListings.length} listings`);
     }
-    
-    console.log(`✅ Fetched total of ${allListings.length} listings from Wheelhouse API`);
-    return allListings;
-    
-  } catch (error) {
-    console.error('Failed to fetch Wheelhouse listings:', error);
-    
-    // Fallback to mock data if API fails
-    console.log('⚠️ Falling back to mock Wheelhouse listings data');
-    return [
-      {
-        id: 'wh_listing_1',
-        name: 'Downtown Luxury Loft',
-        city: 'San Francisco',
-        bedroom_count: 2,
-        bathroom_count: 2,
-        max_guests: 4
-      },
-      {
-        id: 'wh_listing_2', 
-        name: 'Beach House Paradise',
-        city: 'Santa Monica',
-        bedroom_count: 3,
-        bathroom_count: 2,
-        max_guests: 6
-      },
-      {
-        id: 'wh_listing_3',
-        name: 'Mountain Cabin Retreat',
-        city: 'Lake Tahoe',
-        bedroom_count: 4,
-        bathroom_count: 3,
-        max_guests: 8
-      }
-    ];
-  }
+  };
+  
+  return await makeRequest();
 }
 
 // AirDNA free market data
