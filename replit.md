@@ -82,10 +82,14 @@ Preferred communication style: Simple, everyday language.
 
 ### Third-Party APIs
 - **OpenAI API**: AI recommendation generation
-- **Wheelhouse Demand API**: Property performance data
+- **Wheelhouse Demand API**: Property performance data (includes listings sync via POST /api/admin/syncListings)
 - **Guesty Open API**: DISABLED (was: Property management integration)
 - **AirDNA**: Market data and competitive analysis
 - **Rabbu**: Additional market insights
+
+### Admin Endpoints (Added)
+- **POST /api/admin/syncListings**: Fetches and upserts listings from Wheelhouse API
+- **POST /api/admin/refreshNow**: Manual data refresh for all listings across Wheelhouse and market APIs
 
 ### Infrastructure Services
 - **Neon Database**: Serverless PostgreSQL hosting

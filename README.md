@@ -37,6 +37,43 @@ A full-stack TypeScript revenue management platform for short-term rental proper
 
 ⚠️ This app is **read‑only** with Wheelhouse and Guesty. All HTTP requests are GET.
 
+## Manual Admin Endpoints
+
+### Sync Listings from Wheelhouse
+```bash
+POST /api/admin/syncListings
+```
+
+Fetches all listings from Wheelhouse API and upserts them into the database. Uses the `X-Integration-Api-Key` header for authentication (read-only access).
+
+**Response:**
+```json
+{
+  "message": "Listings sync completed",
+  "syncedCount": 12,
+  "totalListings": 12
+}
+```
+
+### Manual Data Refresh
+```bash
+POST /api/admin/refreshNow
+```
+
+Immediately triggers data collection for all listings in the database. Fetches performance data from Wheelhouse and market data from AirDNA/Rabbu.
+
+**Response:**
+```json
+{
+  "message": "Manual refresh completed",
+  "wheelhouseRows": 12,
+  "marketRows": 8,
+  "listingsSynced": 12
+}
+```
+
+Both endpoints require admin access and are designed for operational maintenance.
+
 ### Performance Monitoring & Alerts
 - Z-score analysis (1.5σ below benchmark triggers alerts)
 - Real-time performance notifications

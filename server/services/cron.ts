@@ -81,6 +81,8 @@ export function initializeCronJobs() {
           } catch (error) {
             console.error(`❌ Error processing listing ${listing.id}:`, error);
           }
+          
+          console.info(`[CRON] Wheelhouse+market pull complete for ${listing.id}`);
         }));
 
         // Wait between batches to respect rate limits

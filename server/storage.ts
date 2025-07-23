@@ -76,6 +76,35 @@ export class DatabaseStorage implements IStorage {
     return listing;
   }
 
+  async upsertListing(insertListing: any): Promise<Listing> {
+    // Try to find existing listing by wheelhouseId first
+    if (insertListing.wheelhouseId) {
+      const existing = await db.select().from(listings).where(eq(listings.wheelhouseId, insertListing.wheelhouseId));
+      
+      if (existing.length > 0) {
+        // Update existing listing
+        const [listing] = await db
+          .update(listings)
+          .set({
+            name: insertListing.name,
+            city: insertListing.city,
+            bedroomCount: insertListing.bedroomCount,
+            updatedAt: new Date()
+          })
+          .where(eq(listings.wheelhouseId, insertListing.wheelhouseId))
+          .returning();
+        return listing;
+      }
+    }
+    
+    // Insert new listing
+    const [listing] = await db
+      .insert(listings)
+      .values(insertListing)
+      .returning();
+    return listing;
+  }
+
   async updateListing(id: number, insertListing: Partial<InsertListing>): Promise<Listing> {
     const [listing] = await db
       .update(listings)

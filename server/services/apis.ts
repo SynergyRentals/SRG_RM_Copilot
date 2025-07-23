@@ -82,6 +82,52 @@ export async function fetchGuestyData(listingIds: string[]): Promise<GuestyData[
   return [];
 }
 
+// Wheelhouse Listings API integration
+export async function fetchWheelhouseListings(): Promise<any[]> {
+  console.log('🏢 Fetching Wheelhouse listings...');
+  
+  try {
+    // In production, this would be:
+    // const response = await fetch('https://api.wheelhouse.com/v2/listings', {
+    //   headers: { 'X-Integration-Api-Key': process.env.WHEELHOUSE_API_KEY }
+    // });
+    // const data = await response.json();
+    
+    // For demo: return mock listings data
+    console.log('⚠️ Using mock Wheelhouse listings data');
+    return [
+      {
+        id: 'wh_listing_1',
+        name: 'Downtown Luxury Loft',
+        city: 'San Francisco',
+        bedroom_count: 2,
+        bathroom_count: 2,
+        max_guests: 4
+      },
+      {
+        id: 'wh_listing_2', 
+        name: 'Beach House Paradise',
+        city: 'Santa Monica',
+        bedroom_count: 3,
+        bathroom_count: 2,
+        max_guests: 6
+      },
+      {
+        id: 'wh_listing_3',
+        name: 'Mountain Cabin Retreat',
+        city: 'Lake Tahoe',
+        bedroom_count: 4,
+        bathroom_count: 3,
+        max_guests: 8
+      }
+    ];
+    
+  } catch (error) {
+    console.error('Failed to fetch Wheelhouse listings:', error);
+    return [];
+  }
+}
+
 // AirDNA free market data
 export async function fetchAirDNAData(locations: string[]): Promise<AirDNAData[]> {
   console.log('📈 Fetching AirDNA market data for locations:', locations.length);

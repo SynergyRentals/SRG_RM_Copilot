@@ -16,6 +16,9 @@ export const listings = pgTable("listings", {
   guestyId: text("guesty_id"),
   currentPrice: decimal("current_price", { precision: 10, scale: 2 }),
   isActive: boolean("is_active").default(true),
+  pmsId: text("pms_id"), // null for disabled Guesty
+  city: text("city"),
+  bedroomCount: integer("bedroom_count"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

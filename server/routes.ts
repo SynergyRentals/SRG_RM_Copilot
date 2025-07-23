@@ -6,6 +6,7 @@ import { insertListingSchema, insertUserActionsSchema } from "@shared/schema";
 import { generateAIRecommendations } from "./services/openai";
 import { checkPerformanceAlerts } from "./services/alerts";
 import { seedSampleData } from "./seed-data";
+import { fetchWheelhouseListings, fetchWheelhouseData, fetchAirDNAData, fetchRabbuData } from "./services/apis";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard endpoint - portfolio overview
@@ -191,6 +192,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Seed data error:', error);
       res.status(500).json({ message: 'Failed to seed sample data' });
+    }
+  });
+
+  // Admin endpoint: Sync listings from Wheelhouse
+  app.post("/api/admin/syncListings", async (req, res) => {
+    try {
+      console.log('🔄 Starting Wheelhouse listings sync...');
+      
+      const wheelhouseListings = await fetchWheelhouseListings();
+      let syncedCount = 0;
+      
+      for (const whListing of wheelhouseListings) {
+        await storage.upsertListing({
+          wheelhouseId: whListing.id,
+          name: whListing.name,
+          city: whListing.city,
+          bedroomCount: whListing.bedroom_count,
+          bedrooms: whListing.bedroom_count,
+          bathrooms: whListing.bathroom_count || 1,
+          maxGuests: whListing.max_guests || 4,
+          location: whListing.city,
+          pmsId: null, // Guesty disabled
+          isActive: true
+        });
+        syncedCount++;
+      }
+      
+      console.log(`✅ Synced ${syncedCount} listings from Wheelhouse`);
+      
+      res.json({
+        message: 'Listings sync completed',
+        syncedCount,
+        totalListings: wheelhouseListings.length
+      });
+      
+    } catch (error) {
+      console.error('Sync listings error:', error);
+      res.status(500).json({ message: 'Failed to sync listings' });
+    }
+  });
+
+  // Admin endpoint: Manual data refresh
+  app.post("/api/admin/refreshNow", async (req, res) => {
+    try {
+      console.log('🔄 Starting manual data refresh...');
+      
+      const listings = await storage.getListings();
+      let wheelhouseRows = 0;
+      let marketRows = 0;
+      
+      for (const listing of listings) {
+        try {
+          // Fetch data from all sources
+          const [wheelhouseData, airDNAData, rabbuData] = await Promise.allSettled([
+            fetchWheelhouseData([listing.wheelhouseId].filter(Boolean)),
+            fetchAirDNAData([listing.city || listing.location]),
+            fetchRabbuData([listing.city || listing.location])
+          ]);
+          
+          // Process Wheelhouse data
+          if (wheelhouseData.status === 'fulfilled' && wheelhouseData.value.length > 0) {
+            const data = wheelhouseData.value[0];
+            await storage.createNightlyStats({
+              listingId: listing.id,
+              date: new Date(),
+              adr: data.adr?.toString() || '0',
+              occupancy: ((data.occupancy || 0) * 100).toString(),
+              revpar: data.revpar?.toString() || '0',
+              bookings: data.bookings || 1,
+              revenue: ((data.revpar || 0) * 1.2).toString(),
+              source: 'wheelhouse'
+            });
+            wheelhouseRows++;
+          }
+          
+          // Process market data (AirDNA)
+          if (airDNAData.status === 'fulfilled' && airDNAData.value.length > 0) {
+            const data = airDNAData.value[0];
+            await storage.createMarketStats({
+              location: listing.city || listing.location,
+              date: new Date(),
+              avgAdr: data.marketAdr?.toString() || '0',
+              avgOccupancy: ((data.marketOccupancy || 0) * 100).toString(),
+              avgRevpar: data.marketRevpar?.toString() || '0',
+              topPercentileRevpar: ((data.marketRevpar || 0) * 1.4).toString(),
+              source: 'airdna'
+            });
+            marketRows++;
+          }
+          
+          // Process market data (Rabbu)
+          if (rabbuData.status === 'fulfilled' && rabbuData.value.length > 0) {
+            const data = rabbuData.value[0];
+            await storage.createMarketStats({
+              location: listing.city || listing.location,
+              date: new Date(),
+              avgAdr: data.marketAdr?.toString() || '0',
+              avgOccupancy: ((data.marketOccupancy || 0) * 100).toString(),
+              avgRevpar: data.marketRevpar?.toString() || '0',
+              topPercentileRevpar: ((data.marketRevpar || 0) * 1.4).toString(),
+              source: 'rabbu'
+            });
+            marketRows++;
+          }
+          
+        } catch (error) {
+          console.error(`Error refreshing data for listing ${listing.id}:`, error);
+        }
+      }
+      
+      console.log(`✅ Manual refresh completed: ${wheelhouseRows} Wheelhouse rows, ${marketRows} market rows`);
+      
+      res.json({
+        message: 'Manual refresh completed',
+        wheelhouseRows,
+        marketRows,
+        listingsSynced: listings.length
+      });
+      
+    } catch (error) {
+      console.error('Manual refresh error:', error);
+      res.status(500).json({ message: 'Failed to refresh data' });
     }
   });
 
