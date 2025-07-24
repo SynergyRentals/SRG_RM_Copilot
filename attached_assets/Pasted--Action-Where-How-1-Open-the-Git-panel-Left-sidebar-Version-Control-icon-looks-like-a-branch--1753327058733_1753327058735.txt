@@ -1,0 +1,75 @@
+#	Action	Where / How
+1	Open the Git panel	Left sidebar ➜ Version Control icon (looks like a branch).
+2	Create the branch	Click ⋯ ➜ New branch ➜ type migrate/openai-sdk-1x ➜ Create.
+3	Replace the script	In the file tree, find codex_generate_updated.py (agent just created it).
+→ Right‑click → Rename / Move → type .github/scripts/codex_generate.py → Enter (overwrites the old script).
+4	Update requirements	Drag requirements_updated.txt onto requirements.txt to overwrite it OR open requirements.txt, select‑all, paste the content from requirements_updated.txt, then Save (⌘/Ctrl+S).
+5	Stage & commit	Git panel ➜ Stage all.
+Commit message: copy the line in PR_INSTRUCTIONS.md (agent wrote it for you).
+Click Commit.
+6	Push	Still in Git panel ➜ Push.
+7	Open the PR	Replit shows a link “Create PR” after a push.
+Click it, or go to GitHub → Compare & pull request button.
+8	Verify & merge	- Wait for ✅ on ai_task workflow.
+- Click Merge pull request ➜ Confirm.
+- Delete branch prompt → Delete.
+
+Done. CI is green, your main branch now runs on the new OpenAI SDK.
+
+Path B – Do it directly on GitHub (if you’d rather avoid Replit)
+Create the branch
+
+GitHub → Code tab → Branch: main dropdown → Find/create a branch → type migrate/openai-sdk-1x → Create branch.
+
+Replace codex_generate.py
+
+Navigate: .github/scripts/codex_generate.py → ✏️ Edit.
+
+Open codex_generate_updated.py in a second tab, copy everything (Ctrl+A, Ctrl+C).
+
+Back in the edit window, select‑all, paste.
+
+Commit at bottom (leave “Commit directly to this branch” checked).
+
+Update requirements.txt
+
+If the file exists: open it → ✏️ Edit → replace contents with text from requirements_updated.txt → Commit.
+
+If it doesn’t exist: top of repo → Add file → Create new file → type requirements.txt → paste content → Commit.
+
+Open the PR
+
+GitHub auto‑shows a yellow banner “Compare & pull request”. Click it.
+
+PR title & description: paste the text in PR_INSTRUCTIONS.md.
+
+Create pull request.
+
+Watch CI
+
+In PR, click Checks → wait for ai_task job to turn green.
+
+When green: Merge pull request → Confirm merge → Delete branch.
+
+Sanity‑check after merge
+bash
+Copy
+Edit
+git pull origin main
+ISSUE_BODY='test' OPENAI_API_KEY=$OPENAI_API_KEY \
+python .github/scripts/codex_generate.py
+No traceback = migration succeeded.
+
+That’s it. Follow the eight clicks in Path A (or five steps in Path B) and the pipeline will be unblocked. Ping me if any step throws an error.
+
+
+
+
+
+
+
+
+
+Ask ChatGPT
+
+

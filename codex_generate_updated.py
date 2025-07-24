@@ -28,17 +28,21 @@ def main() -> None:
         "You are a helpful AI developer. "
         "Generate well-structured, clean Python 3.12 code that addresses the following GitHub issue. "
         "Return only the code without explanation.\n\n"
-        f"Issue:\n{issue_body.strip()}\n\nCode:\n"
-    )
+        f"Issue:\n{issue_body.strip()}\n\nCode:\n")
 
     try:
         # Using ChatCompletion API as Codex models are deprecated
         response = client.chat.completions.create(
             model="gpt-4o-mini",  # or "gpt-3.5-turbo" for cost efficiency
-            messages=[
-                {"role": "system", "content": "You are a helpful AI developer that generates clean, well-structured Python code."},
-                {"role": "user", "content": prompt}
-            ],
+            messages=[{
+                "role":
+                "system",
+                "content":
+                "You are a helpful AI developer that generates clean, well-structured Python code."
+            }, {
+                "role": "user",
+                "content": prompt
+            }],
             max_tokens=800,
             temperature=0.0,
             n=1,
@@ -52,7 +56,7 @@ def main() -> None:
         sys.exit(1)
 
     code = response.choices[0].message.content.strip()
-    
+
     # Remove any markdown code blocks if present
     if code.startswith("```python"):
         code = code[len("```python"):].strip()
@@ -60,7 +64,7 @@ def main() -> None:
         code = code[3:].strip()
     if code.endswith("```"):
         code = code[:-3].strip()
-    
+
     print(code)
 
 
