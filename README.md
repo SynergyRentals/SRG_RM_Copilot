@@ -99,3 +99,28 @@ export const RM_BRAIN_CONFIG = {
     CRITICAL_DECLINE_PCT: -25,
   }
 };
+
+
+## Automated AI Code Generation Pipeline
+
+Our repository includes an automated pipeline that leverages OpenAI Codex to generate code for issues labelled `ai-task`. The workflow listens for GitHub issues with the `ai-task` label, invokes Codex to produce code based on the issue description, commits the generated code to a feature branch, runs tests and linting via `make check`, and opens a pull request for review.
+
+```mermaid
+flowchart TD
+    A[GitHub Issue labelled 'ai-task'] --> B[GitHub Actions: codex_worker.yml]
+    B --> C[Codex generation script]
+    C --> D[Create branch ai/<issue-id> and commit code]
+    D --> E[Run make check (black, ruff, mypy, pytest)]
+    E --> F[Open Pull Request]
+    F --> G[Merge to main on approval]
+    G --> H[Replit deployment via replit-deploy.json]
+```
+
+**Workflow Steps**
+
+1. **Issue creation** – When a new issue is labelled `ai-task`, the `codex_worker` workflow is triggered.
+2. **Codex invocation** – The workflow calls the `codex_generate.py` script with the issue body, using your `OPENAI_API_KEY` to request code from OpenAI.
+3. **Branch & commit** – Generated code is written to `ai_tasks/<issue-id>/main.py` on a new branch (`ai/<issue-id>`), and a commit is made using a conventional commit message.
+4. **CI checks** – The workflow runs `make check`, which formats the code, lints it, performs static type checking, and runs unit tests.
+5. **Pull request** – If checks pass, the workflow opens a pull request back to `main` for review.
+6. **Deployment** – Merging to `main` triggers Replit deployment via `replit-deploy.json`, automatically pulling the latest code and restarting the app.
