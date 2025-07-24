@@ -4,12 +4,41 @@ import { RM_BRAIN_CONFIG } from "../../src/config/rm-brain";
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// Helper function to determine current season
+function getSeason(date: Date): string {
+  const month = date.getMonth() + 1; // getMonth() returns 0-11
+  if (month >= 3 && month <= 5) return 'Spring';
+  if (month >= 6 && month <= 8) return 'Summer';
+  if (month >= 9 && month <= 11) return 'Fall';
+  return 'Winter';
+}
+
+// Helper function to analyze occupancy trend
+function getOccupancyTrend(stats: { occupancy: string }[]): string {
+  if (stats.length < 2) return 'Insufficient data';
+  
+  const occupancies = stats.map(s => parseFloat(s.occupancy));
+  const firstHalf = occupancies.slice(0, Math.floor(occupancies.length / 2));
+  const secondHalf = occupancies.slice(Math.floor(occupancies.length / 2));
+  
+  const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+  const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+  
+  const change = ((secondAvg - firstAvg) / firstAvg) * 100;
+  
+  if (change > 5) return `Improving (+${change.toFixed(1)}%)`;
+  if (change < -5) return `Declining (${change.toFixed(1)}%)`;
+  return 'Stable';
+}
+
 export interface AIRecommendation {
   title: string;
   description: string;
   potentialImpact: number;
   confidence: number;
-  recommendationType: 'pricing_optimization' | 'occupancy_strategy' | 'revenue_enhancement' | 'market_positioning';
+  recommendationType: 'pricing_optimization' | 'occupancy_strategy' | 'revenue_enhancement' | 'market_positioning' | 'seasonal_strategy' | 'competitive_intelligence' | 'event_based_pricing';
+  timeframe?: 'immediate' | 'short_term' | 'long_term'; // When to implement
+  priority?: 'high' | 'medium' | 'low'; // Urgency level
 }
 
 export async function generateAIRecommendations(listingData: {
@@ -35,52 +64,83 @@ export async function generateAIRecommendations(listingData: {
   }
 
   try {
+    // Calculate performance trends
+    const avgOccupancy = listingData.recentStats.length > 0 
+      ? listingData.recentStats.reduce((sum, stat) => sum + parseFloat(stat.occupancy), 0) / listingData.recentStats.length
+      : 0;
+    
+    const avgRevpar = listingData.recentStats.length > 0
+      ? listingData.recentStats.reduce((sum, stat) => sum + parseFloat(stat.revpar), 0) / listingData.recentStats.length
+      : 0;
+
+    // Get current month and season for seasonal recommendations
+    const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+    const currentSeason = getSeason(new Date());
+
     const prompt = `
-You are an expert revenue management AI for short-term rental properties. 
+You are an expert revenue management AI for short-term rental properties with deep knowledge of pricing strategy, market dynamics, and seasonal optimization.
 
-Analyze this property data and provide 2-3 specific, actionable revenue optimization recommendations:
+Analyze this property data comprehensively and provide 3-4 specific, actionable revenue optimization recommendations:
 
-Property: ${listingData.name}
-Location: ${listingData.location}
-Current Price: $${listingData.currentPrice}
+PROPERTY DETAILS:
+- Name: ${listingData.name}
+- Location: ${listingData.location}
+- Current Base Price: $${listingData.currentPrice}/night
+- Current Month: ${currentMonth} (${currentSeason} season)
 
-Recent Performance (last ${listingData.recentStats.length} days):
+RECENT PERFORMANCE (last ${listingData.recentStats.length} days):
 ${listingData.recentStats.map((stat, i) => 
   `Day ${i+1}: ADR $${stat.adr}, Occupancy ${stat.occupancy}%, RevPAR $${stat.revpar}`
 ).join('\n')}
 
+PERFORMANCE SUMMARY:
+- Average Occupancy: ${avgOccupancy.toFixed(1)}%
+- Average RevPAR: $${avgRevpar.toFixed(2)}
+- Occupancy Trend: ${getOccupancyTrend(listingData.recentStats)}
+
 ${listingData.marketData ? `
-Market Benchmarks:
-- Market ADR: $${listingData.marketData.avgAdr}
-- Market Occupancy: ${listingData.marketData.avgOccupancy}%
-- Market RevPAR: $${listingData.marketData.avgRevpar}
+MARKET BENCHMARKS:
+- Market ADR: $${listingData.marketData.avgAdr} (You: ${((parseFloat(listingData.currentPrice) / parseFloat(listingData.marketData.avgAdr) - 1) * 100).toFixed(1)}% difference)
+- Market Occupancy: ${listingData.marketData.avgOccupancy}% (You: ${(avgOccupancy - parseFloat(listingData.marketData.avgOccupancy)).toFixed(1)}% difference)
+- Market RevPAR: $${listingData.marketData.avgRevpar} (You: ${((avgRevpar / parseFloat(listingData.marketData.avgRevpar) - 1) * 100).toFixed(1)}% difference)
 ` : ''}
 
-Configuration:
-- Weight Cap: ${RM_BRAIN_CONFIG.WEIGHT_CAP_PCT * 100}% vs native Wheelhouse recommendations
-- AI Blend Mode: ${RM_BRAIN_CONFIG.AB_MODE}
+CONSTRAINTS:
+- Weight Cap: ±${RM_BRAIN_CONFIG.WEIGHT_CAP_PCT * 100}% vs native recommendations
+- Confidence Threshold: ${RM_BRAIN_CONFIG.AI.CONFIDENCE_THRESHOLD * 100}% for auto-apply
 
-Please provide recommendations in JSON format with this structure:
+Please provide recommendations in JSON format:
 {
   "recommendations": [
     {
-      "title": "Short, actionable title",
-      "description": "Specific implementation details with numbers",
+      "title": "Short, actionable title (max 50 chars)",
+      "description": "Detailed implementation steps with specific numbers and dates",
       "potentialImpact": number (estimated monthly revenue impact in dollars),
-      "confidence": number (1-100 confidence score),
-      "recommendationType": "pricing_optimization" | "occupancy_strategy" | "revenue_enhancement" | "market_positioning"
+      "confidence": number (50-100 based on data quality and market conditions),
+      "recommendationType": "pricing_optimization" | "occupancy_strategy" | "revenue_enhancement" | "market_positioning" | "seasonal_strategy" | "competitive_intelligence" | "event_based_pricing",
+      "timeframe": "immediate" | "short_term" | "long_term",
+      "priority": "high" | "medium" | "low"
     }
   ]
 }
 
-Focus on:
-1. Pricing optimizations based on market position
-2. Occupancy strategies for revenue maximization  
-3. Revenue enhancement opportunities
-4. Market positioning improvements
+RECOMMENDATION FOCUS AREAS:
+1. PRICING OPTIMIZATION: Dynamic pricing adjustments based on demand patterns
+2. OCCUPANCY STRATEGY: Minimum stay, booking window, and availability management
+3. SEASONAL STRATEGY: ${currentSeason} season-specific optimizations
+4. COMPETITIVE INTELLIGENCE: Position vs similar properties in the market
+5. EVENT-BASED PRICING: Local events or holidays in the next 30-60 days
+6. REVENUE ENHANCEMENT: Ancillary revenue opportunities and rate optimization
 
-Keep recommendations within the ${RM_BRAIN_CONFIG.WEIGHT_CAP_PCT * 100}% weight cap constraint.
-`;
+Consider:
+- Day-of-week pricing patterns (weekday vs weekend)
+- Seasonal demand shifts for ${currentSeason}
+- Lead time pricing (last-minute vs advance bookings)
+- Length-of-stay discounts or premiums
+- Market saturation and competitive positioning
+
+Ensure all rate recommendations stay within the ±${RM_BRAIN_CONFIG.WEIGHT_CAP_PCT * 100}% weight cap.
+Be specific with numbers, dates, and implementation steps.`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -102,14 +162,20 @@ Keep recommendations within the ${RM_BRAIN_CONFIG.WEIGHT_CAP_PCT * 100}% weight 
     const result = JSON.parse(response.choices[0].message.content || '{"recommendations": []}');
     
     // Validate and format recommendations
+    const validTypes = ['pricing_optimization', 'occupancy_strategy', 'revenue_enhancement', 'market_positioning', 'seasonal_strategy', 'competitive_intelligence', 'event_based_pricing'];
+    const validTimeframes = ['immediate', 'short_term', 'long_term'];
+    const validPriorities = ['high', 'medium', 'low'];
+    
     const recommendations = result.recommendations?.map((rec: any) => ({
       title: rec.title || 'Revenue Optimization',
       description: rec.description || 'Optimize pricing strategy',
-      potentialImpact: Math.max(0, Math.min(2000, rec.potentialImpact || 200)),
+      potentialImpact: Math.max(0, Math.min(5000, rec.potentialImpact || 200)),
       confidence: Math.max(50, Math.min(100, rec.confidence || 75)),
-      recommendationType: ['pricing_optimization', 'occupancy_strategy', 'revenue_enhancement', 'market_positioning'].includes(rec.recommendationType) 
+      recommendationType: validTypes.includes(rec.recommendationType) 
         ? rec.recommendationType 
-        : 'pricing_optimization'
+        : 'pricing_optimization',
+      timeframe: validTimeframes.includes(rec.timeframe) ? rec.timeframe : 'short_term',
+      priority: validPriorities.includes(rec.priority) ? rec.priority : 'medium'
     })) || [];
 
     console.log(`🤖 Generated ${recommendations.length} AI recommendations for ${listingData.name}`);
