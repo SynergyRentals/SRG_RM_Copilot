@@ -57,10 +57,18 @@ Working on: Git version control, OpenAI integration enhancements, understanding 
 - **Recommendation Metadata**: Added timeframe (immediate/short_term/long_term) and priority (high/medium/low) fields
 - **Performance Analysis**: Added helper functions for occupancy trend analysis and seasonal detection
 
+### OpenAI SDK Migration (GitHub Actions)
+- **Migrated Python Script**: Updated `.github/scripts/codex_generate.py` from OpenAI SDK v0.x to v1.x
+- **API Changes**: Replaced deprecated `Completion.create()` with new `chat.completions.create()` API
+- **Model Update**: Switched from deprecated `code-davinci-002` to modern `gpt-4o-mini` model
+- **Dependencies**: Updated OpenAI package to version >=1.0.0
+- **Error Handling**: Improved error handling and added markdown code block stripping
+
 ### Documentation Updates
 - **Created GIT_WORKFLOW.md**: Comprehensive Git usage guide for the team
 - **Created OPENAI_MIGRATION_EXPLAINED.md**: Explanation of OpenAI SDK v0.x to v1.x migration
 - **Created AI_ENHANCEMENTS.md**: Roadmap for future AI capabilities and optimization strategies
+- **PR_INSTRUCTIONS.md**: Contains detailed instructions for creating the migration pull request
 
 ## Key Components
 

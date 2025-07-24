@@ -1,3 +1,22 @@
+Required Refactor
+To finish the migration and make the ai_task workflow pass, replace the old Codex usage in .github/scripts/codex_generate.py with the new 1.x API. A simple pattern you can follow is:
+
+python
+Copy
+Edit
+from openai import OpenAI
+
+client = OpenAI()
+response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": prompt}],
+)
+Patch for .github/scripts/codex_generate.py
+Below is a complete, dedented replacement for the script. It uses the OpenAI client, constructs a chat prompt, and extracts the generated code from response.choices[0].message.content:
+
+python
+Copy
+Edit
 #!/usr/bin/env python3
 """
 Script to generate Python code from a GitHub issue description using OpenAI Chat Completions.
@@ -68,3 +87,11 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+Next Steps
+Replace the contents of .github/scripts/codex_generate.py with the above.
+
+Remove and reapply the ai-task label on your open issue to rerun the workflow.
+
+If you have pinned openai to an older version anywhere, update it to openai>=1.0.0 (e.g. in a requirements.txt or pyproject.toml), since the new client is now required.
+
+After this patch, the ai_task GitHub Actions job should no longer attempt to access deprecated classes and should proceed to generate code, run make check, and open a pull request.

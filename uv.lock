@@ -265,7 +265,7 @@ dependencies = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "openai", specifier = ">=1.97.1" }]
+requires-dist = [{ name = "openai", specifier = ">=1.0.0" }]
 
 [[package]]
 name = "sniffio"
