@@ -7,6 +7,7 @@ Synergy RM Copilot is a full-stack TypeScript revenue management platform design
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Working on: Git version control, OpenAI integration enhancements, understanding Git migration instructions.
 
 ## System Architecture
 
@@ -39,6 +40,27 @@ Preferred communication style: Simple, everyday language.
   - `userActions`: Audit trail for user interactions
 
 **Rationale**: PostgreSQL was chosen for its ACID compliance, which is crucial for financial data integrity. The normalized schema prevents data duplication while enabling efficient queries for dashboard analytics.
+
+## Recent Changes (January 2025)
+
+### Git Version Control Enhancement
+- **Enhanced .gitignore**: Added comprehensive ignore patterns for TypeScript, Python, database files, and IDE configurations
+- **Git Workflow Documentation**: Created GIT_WORKFLOW.md with branch strategies, commit conventions, and best practices
+- **Integration Ready**: Set up for CI/CD pipeline integration
+
+### OpenAI Integration Enhancements
+- **Extended Recommendation Types**: Added 3 new AI recommendation categories:
+  - `seasonal_strategy`: Season-specific pricing and availability optimizations
+  - `competitive_intelligence`: Market positioning and differentiation strategies
+  - `event_based_pricing`: Dynamic pricing for local events and holidays
+- **Enhanced AI Prompts**: Improved context with performance trends, seasonal analysis, and market positioning
+- **Recommendation Metadata**: Added timeframe (immediate/short_term/long_term) and priority (high/medium/low) fields
+- **Performance Analysis**: Added helper functions for occupancy trend analysis and seasonal detection
+
+### Documentation Updates
+- **Created GIT_WORKFLOW.md**: Comprehensive Git usage guide for the team
+- **Created OPENAI_MIGRATION_EXPLAINED.md**: Explanation of OpenAI SDK v0.x to v1.x migration
+- **Created AI_ENHANCEMENTS.md**: Roadmap for future AI capabilities and optimization strategies
 
 ## Key Components
 
